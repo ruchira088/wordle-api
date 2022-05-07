@@ -24,14 +24,14 @@ object GameRoutes {
           response <- Created(GameResponse.from(game))
         } yield response
 
-      case GET -> Root / "game" / gameId =>
+      case GET -> Root / "id" / gameId =>
         for {
           game <- gameService.findById(gameId)
           response <- Ok(GameResponse.from(game))
         }
         yield response
 
-      case request @ POST -> Root / "game" / gameId =>
+      case request @ POST -> Root / "id" / gameId =>
         for {
           validateGuessRequest <- request.to[ValidateGuessRequest]
           guessResult <- gameService.validateGuess(gameId, validateGuessRequest.guess)

@@ -34,7 +34,7 @@ object ExceptionHandler {
   val throwableStatusMapper: Throwable => Status = {
     case _: ResourceNotFoundException => Status.NotFound
 
-    case _: IllegalArgumentException => Status.BadGateway
+    case _: IllegalArgumentException => Status.BadRequest
 
     case _ => Status.InternalServerError
   }
