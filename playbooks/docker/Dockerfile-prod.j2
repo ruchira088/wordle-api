@@ -1,0 +1,13 @@
+FROM openjdk:17-slim
+
+ENV GIT_BRANCH {{ git_branch }}
+ENV GIT_COMMIT {{ git_commit }}
+ENV BUILD_TIMESTAMP {{ build_timestamp }}
+
+WORKDIR /opt/wordle-api
+
+ADD wordle-api-*.tgz .
+
+EXPOSE 8000
+
+CMD [ "/opt/wordle-api/bin/wordle-api" ]

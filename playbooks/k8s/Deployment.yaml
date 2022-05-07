@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordle-api-deployment
+  namespace: {{ namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: wordle-api
+      branch: {{ git_branch }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: wordle-api
+        branch: {{ git_branch }}
+    spec:
+      containers:
+        - name: wordle-api-container
+          image: ruchira088/wordle-api:{{ git_branch }}-{{ git_commit }}
+          envFrom:
+            - configMapRef:
+                name: wordle-api-data-config-map
+            - secretRef:
+                name: wordle-api-secrets
+          readinessProbe:
+            httpGet:
+              port: http4s-port
+              path: /service/info
+              httpHeaders:
+                - name: X-Correlation-ID
+                  value: k8s-readiness-probe
+          livenessProbe:
+            httpGet:
+              port: http4s-port
+              path: /service/info
+              httpHeaders:
+                - name: X-Correlation-ID
+                  value: k8s-liveness-probe
+          startupProbe:
+            periodSeconds: 5
+            failureThreshold: 5
+            httpGet:
+              port: http4s-port
+              path: /service/info
+              httpHeaders:
+                - name: X-Correlation-ID
+                  value: k8s-startup-probe
+          ports:
+            - name: http4s-port
+              containerPort: 8000
+          volumeMounts:
+            - mountPath: /opt/data
+              name: file-config-map
+      volumes:
+        - name: file-config-map
+          configMap:
+            name: wordle-api-file-config-map
+
