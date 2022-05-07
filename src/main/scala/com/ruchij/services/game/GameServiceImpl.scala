@@ -27,7 +27,6 @@ class GameServiceImpl[F[_]: Sync: JodaClock](words: Vector[String], gameDao: Gam
 
       selectedWord <- RandomGenerator.select(words.filter(_.length == wordLength))
 
-      _ <- Sync[F].blocking(println(selectedWord))
       game = Game(gameId.toString, timestamp, selectedWord, guessCount, guessCount)
 
       _ <- gameDao.insert(game)
