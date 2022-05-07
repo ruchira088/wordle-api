@@ -7,8 +7,8 @@ import cats.{Applicative, ApplicativeError}
 import com.ruchij.dao.game.GameDao
 import com.ruchij.dao.game.models.Game
 import com.ruchij.exceptions.ResourceNotFoundException
-import com.ruchij.services.game.models.GuessResult
-import com.ruchij.services.game.models.GuessResult.GuessesExhausted
+import com.ruchij.services.game.models.Outcome.{CorrectGuess, GuessesExhausted, IncorrectGuess}
+import com.ruchij.services.game.models.{GuessResult, Outcome}
 import com.ruchij.types.FunctionKTypes.{FunctionK2TypeOps, eitherToF}
 import com.ruchij.types.{JodaClock, RandomGenerator}
 
@@ -39,7 +39,7 @@ class GameServiceImpl[F[_]: Sync: JodaClock](words: Vector[String], gameDao: Gam
         ApplicativeError[F, Throwable].raiseError(ResourceNotFoundException(s"Unable to find game with id=$gameId"))
       }
 
-  override def validateGuess(gameId: String, guess: String): F[GuessResult] =
+  override def validateGuess(gameId: String, guess: String): F[Outcome] =
     for {
       _ <-
         if (wordsSet.contains(guess)) Applicative[F].unit
@@ -49,16 +49,22 @@ class GameServiceImpl[F[_]: Sync: JodaClock](words: Vector[String], gameDao: Gam
 
       game <- findById(gameId)
 
-      guessOutcome <- GameService.compareGuess(guess, game.word).left
+      guessResult <- GameService.compareGuess(guess, game.word).left
         .map(error => new IllegalArgumentException(error))
         .toType[F, Throwable]
 
-      guessResult <-
-        if (!guessOutcome.success)
-          if (game.remainingGuesses == 0) gameDao.deleteById(gameId).as(GuessesExhausted(game.word, game.guessCount))
-          else gameDao.deductRemainingAttempts(gameId, 1).as(guessOutcome)
-        else Applicative[F].pure(guessOutcome)
+      outcome <-
+        guessResult match {
+          case GuessResult.Incorrect(correctPositions, correctLetters) =>
+            if (game.remainingGuesses == 0) gameDao.deleteById(gameId).as(GuessesExhausted(game.word, game.guessCount))
+            else {
+              gameDao.deductRemainingAttempts(gameId, 1)
+                .as(IncorrectGuess(correctPositions, correctLetters, game.remainingGuesses - 1))
+            }
 
-    } yield guessResult
+          case GuessResult.Correct(word) => Applicative[F].pure(CorrectGuess(word, game.remainingGuesses))
+        }
+
+    } yield outcome
 
 }

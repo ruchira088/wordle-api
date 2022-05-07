@@ -3,7 +3,7 @@ package com.ruchij.web.routes
 import cats.effect.Async
 import cats.implicits._
 import com.ruchij.services.game.GameService
-import com.ruchij.services.game.models.GuessResult.{GuessesExhausted, IncorrectGuess, CorrectGuess}
+import com.ruchij.services.game.models.Outcome.{GuessesExhausted, IncorrectGuess, CorrectGuess}
 import com.ruchij.web.requests.{CreateGameRequest, RequestOps, ValidateGuessRequest}
 import com.ruchij.web.responses.GameResponse
 import io.circe.generic.auto._

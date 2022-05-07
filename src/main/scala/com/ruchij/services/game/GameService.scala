@@ -1,27 +1,27 @@
 package com.ruchij.services.game
 
 import com.ruchij.dao.game.models.Game
-import com.ruchij.services.game.models.GuessResult
-import com.ruchij.services.game.models.GuessResult.{GuessOutcome, IncorrectGuess, CorrectGuess}
+import com.ruchij.services.game.models.{GuessResult, Outcome}
+import com.ruchij.services.game.models.GuessResult.{Correct, Incorrect}
 
 trait GameService[F[_]] {
   def createGame(wordLength: Int, guessCount: Int): F[Game]
 
   def findById(gameId: String): F[Game]
 
-  def validateGuess(gameId: String, guess: String): F[GuessResult]
+  def validateGuess(gameId: String, guess: String): F[Outcome]
 }
 
 object GameService {
 
-  def compareGuess(guess: String, word: String): Either[String, GuessOutcome] =
+  def compareGuess(guess: String, word: String): Either[String, GuessResult] =
     if (guess.length != word.length) Left("Guessed word length does NOT equal target word length")
     else {
       val correctPositions: Seq[(Int, Char)]= findCorrectPositions(guess, word).sortBy { case (index, _) => index }
       val correctLetters: Seq[Char] = findCorrectLetters(guess.toList, word.toList).sortBy(_ => Math.random())
 
-      if (correctPositions.size == word.length) Right(CorrectGuess(word))
-      else Right(IncorrectGuess(correctPositions, correctLetters))
+      if (correctPositions.size == word.length) Right(Correct(word))
+      else Right(Incorrect(correctPositions, correctLetters))
     }
 
   private def findCorrectPositions(guess: String, word: String): Seq[(Int, Char)] =
