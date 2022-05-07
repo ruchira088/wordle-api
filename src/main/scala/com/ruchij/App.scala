@@ -10,6 +10,7 @@ import com.ruchij.exceptions.ResourceNotFoundException
 import com.ruchij.services.file.{Fs2ResourceStore, ResourceStore}
 import com.ruchij.services.game.GameServiceImpl
 import com.ruchij.services.health.HealthServiceImpl
+import com.ruchij.types.Logger
 import com.ruchij.web.Routes
 import fs2.text
 import org.http4s.blaze.server.BlazeServerBuilder
@@ -18,13 +19,18 @@ import pureconfig.ConfigSource
 object App extends IOApp {
   private val DataSource = "words.txt"
 
+  private val logger = Logger[App.type]
+
   override def run(args: List[String]): IO[ExitCode] =
     for {
       configObjectSource <- IO.delay(ConfigSource.defaultApplication)
       serviceConfiguration <- ServiceConfiguration.parse[IO](configObjectSource)
 
       fileStore = new Fs2ResourceStore[IO]
+
+      _ <- logger.info[IO]("Loading data...")
       data <- loadData(fileStore, DataSource)
+      _ <- logger.info[IO](s"Loaded ${data.size} words")
 
       gameDao = new InMemoryGameDao[IO]
       healthService = new HealthServiceImpl[IO](serviceConfiguration.buildInformation)
