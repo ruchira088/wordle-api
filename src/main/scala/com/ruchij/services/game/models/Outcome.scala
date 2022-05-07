@@ -1,5 +1,7 @@
 package com.ruchij.services.game.models
 
+import io.circe.Encoder
+
 sealed trait Outcome {
   val success: Boolean
   val remainingGuessCount: Int
@@ -22,4 +24,14 @@ object Outcome {
     override val remainingGuessCount: Int = -1,
     override val success: Boolean = false
   ) extends Outcome
+
+  implicit def outcomeEncoder(
+    implicit incorrectGuessEncoder: Encoder[IncorrectGuess],
+    correctGuessEncoder: Encoder[CorrectGuess],
+    guessesExhaustedEncoder: Encoder[GuessesExhausted]
+  ): Encoder[Outcome] = {
+    case incorrectGuess: IncorrectGuess => incorrectGuessEncoder(incorrectGuess)
+    case correctGuess: CorrectGuess => correctGuessEncoder(correctGuess)
+    case guessesExhausted: GuessesExhausted => guessesExhaustedEncoder(guessesExhausted)
+  }
 }

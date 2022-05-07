@@ -3,7 +3,6 @@ package com.ruchij.web.routes
 import cats.effect.Async
 import cats.implicits._
 import com.ruchij.services.game.GameService
-import com.ruchij.services.game.models.Outcome.{GuessesExhausted, IncorrectGuess, CorrectGuess}
 import com.ruchij.web.requests.{CreateGameRequest, RequestOps, ValidateGuessRequest}
 import com.ruchij.web.responses.GameResponse
 import io.circe.generic.auto._
@@ -35,13 +34,7 @@ object GameRoutes {
         for {
           validateGuessRequest <- request.to[ValidateGuessRequest]
           guessResult <- gameService.validateGuess(gameId, validateGuessRequest.guess)
-
-          response <-
-            guessResult match {
-              case guessesExhausted: GuessesExhausted => NotAcceptable(guessesExhausted)
-              case successfulGuess: CorrectGuess => Ok(successfulGuess)
-              case incorrectGuess: IncorrectGuess => Ok(incorrectGuess)
-            }
+          response <- Ok(guessResult)
         }
         yield response
     }
